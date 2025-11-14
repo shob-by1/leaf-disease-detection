@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Disease Detection System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f3f3;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+        h2 {
+            text-align: center;
+            color: #444;
+        }
+        .upload-box {
+            border: 2px dashed #999;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        input[type="file"] {
+            margin-top: 10px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #0077cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        button:hover {
+            background: #005fa3;
+        }
+        .result {
+            margin-top: 25px;
+            padding: 15px;
+            background: #eef;
+            border-left: 4px solid #0077cc;
+            border-radius: 6px;
+        }
+        img, video {
+            width: 60%;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+        }
+        .item-block {
+            margin-top: 25px;
+            padding: 15px;
+            background: #fdfdfd;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🌿 Leaf Disease Detection (YOLOv8)</h2>
+
+    <form id="uploadForm">
+        <div class="upload-box">
+            <h3>Select Image(s) or Video</h3>
+            <input type="file" id="images" name="images" multiple required>
+            <button type="submit">Upload & Detect</button>
+        </div>
+    </form>
+
+    <div id="results"></div>
+</div>
+
+<script>
+    const form = document.getElementById("uploadForm");
+    const resultsDiv = document.getElementById("results");
+
+    form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        resultsDiv.innerHTML = "<h3>Processing... Please wait ⏳</h3>";
+
+        let formData = new FormData();
+        let files = document.getElementById("images").files;
+
+        for (let i = 0; i < files.length; i++) {
+            formData.append("images", files[i]);
+        }
+
+        const response = await fetch("/detect", {
+            method: "POST",
+            body: formData
+        });
+
+        const output = await response.json();
+        resultsDiv.innerHTML = "";
+
+        output.forEach(item => {
+            let block = document.createElement("div");
+            block.className = "item-block";
+
+            if (item.type === "image") {
+                block.innerHTML = `
+                    <h3>Detected Image</h3>
+                    <p><strong>Disease Percentage:</strong> ${item.disease_percent}%</p>
+                    <img src="/${item.output}" alt="Detected Image">
+                `;
+            }
+
+            if (item.type === "video") {
+                block.innerHTML = `
+                    <h3>Detected Video</h3>
+                    <video controls>
+                        <source src="/${item.annotated_video}" type="video/mp4">
+                    </video>
+                `;
+            }
+
+            resultsDiv.appendChild(block);
+        });
+    });
+</script>
+
+</body>
+</html>
